@@ -8,23 +8,19 @@ import requests
 
 app = Flask(__name__)
 
-# لیست User-Agent های مختلف برای استفاده تصادفی - با تمرکز بیشتر روی iOS
-USER_AGENTS = [
-    "Amazon/34521 (iPhone; CPU iPhone OS 16_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148",
-    "Amazon/34522 (iPhone; CPU iPhone OS 16_4 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148",
-    "Amazon/34523 (iPhone; CPU iPhone OS 16_3 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148",
-    "Amazon/34524 (iPhone; CPU iPhone OS 16_2 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148",
-    "Amazon/34525 (iPhone; CPU iPhone OS 16_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148",
-    "Amazon/34526 (iPhone; CPU iPhone OS 16_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148",
-    "Amazon/34527 (iPad; CPU OS 16_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148",
-    "Amazon/34528 (iPad; CPU OS 16_4 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148",
-    "Amazon/23458 (iPhone; CPU iPhone OS 15_7 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148",
-    "Amazon/23459 (iPad; CPU OS 15_7 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148"
+# User-Agent list for iOS 16
+ios_user_agents = [
+    # iOS User-Agents - updated for version 3.104.1.0
+    "Amazon/3.104.1.0 (iPhone; CPU iPhone OS 16_6_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/20G81",
+    "Amazon/3.104.1.0 (iPhone; CPU iPhone OS 16_6 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/20G75",
+    "Amazon/3.104.1.0 (iPhone; CPU iPhone OS 16_5_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/20F75",
+    "Amazon/3.104.1.0 (iPhone; CPU iPhone OS 16_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/20F66",
+    "Amazon/3.104.1.0 (iPhone; CPU iPhone OS 16_4_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/20E252",
 ]
 
 # آدرس سرور امضا - این را باید با آدرس واقعی سرور دوم تغییر دهید
 SIGNATURE_SERVER = os.environ.get('SIGNATURE_SERVER', 'https://flex-proxy-server-2.onrender.com')
-SIGNATURE_API_KEY = os.environ.get('SIGNATURE_API_KEY', 'default-sig-api-key')
+SIGNATURE_API_KEY = os.environ.get('SIGNATURE_API_KEY', '8c200fc0d90bc71acb837ea45eae90c8')
 
 @app.route('/')
 def home():
@@ -48,7 +44,11 @@ def accept_offer(api_key, marketplace_id):
                 "path": "/AcceptOffer",
                 "request_id": str(uuid.uuid4())
             },
-            timeout=5
+            timeout=5,
+            headers={
+                'User-Agent': random.choice(ios_user_agents),
+                'Content-Type': 'application/json'
+            }
         )
         
         if signature_request.status_code != 200:
@@ -83,7 +83,11 @@ def validate_challenge(api_key, marketplace_id):
                 "path": "/ValidateChallenge",
                 "request_id": str(uuid.uuid4())
             },
-            timeout=5
+            timeout=5,
+            headers={
+                'User-Agent': random.choice(ios_user_agents),
+                'Content-Type': 'application/json'
+            }
         )
         
         if signature_request.status_code != 200:
@@ -130,7 +134,7 @@ def generate_local_signature(marketplace_id=None):
     return {
         "signature_input": sig_input,
         "signature": sig,
-        "user_agent": random.choice(USER_AGENTS)
+        "user_agent": random.choice(ios_user_agents)
     }
 
 if __name__ == '__main__':
