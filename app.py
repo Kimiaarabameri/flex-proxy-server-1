@@ -18,6 +18,15 @@ ios_user_agents = [
     "Amazon/3.104.1.0 (iPhone; CPU iPhone OS 16_4_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/20E252",
 ]
 
+# User-Agent list for Android - updated for version 2.512.0.0
+android_user_agents = [
+    "Amazon/2.512.0.0 (Linux; Android 13; SM-S918B Build/TP1A.220624.014) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/114.0.5735.196 Mobile Safari/537.36",
+    "Amazon/2.512.0.0 (Linux; Android 13; SM-G998U Build/TP1A.220624.014) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/114.0.5735.196 Mobile Safari/537.36",
+    "Amazon/2.512.0.0 (Linux; Android 13; Pixel 7 Build/TQ2A.230505.002) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/114.0.5735.196 Mobile Safari/537.36",
+    "Amazon/2.512.0.0 (Linux; Android 12; SM-S906N Build/SP1A.210812.016) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/114.0.5735.196 Mobile Safari/537.36",
+    "Amazon/2.512.0.0 (Linux; Android 12; Pixel 6 Build/SD1A.210817.023) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/114.0.5735.196 Mobile Safari/537.36",
+]
+
 # آدرس سرور امضا - این را باید با آدرس واقعی سرور دوم تغییر دهید
 SIGNATURE_SERVER = os.environ.get('SIGNATURE_SERVER', 'https://flex-proxy-server-2.onrender.com')
 SIGNATURE_API_KEY = os.environ.get('SIGNATURE_API_KEY', '8c200fc0d90bc71acb837ea45eae90c8')
@@ -29,6 +38,17 @@ def home():
         "message": "Use /accept/<api_key>/<marketplace_id> or /challenge/<api_key>/<marketplace_id> endpoints"
     })
 
+# تابع کمکی برای انتخاب User-Agent مناسب براساس پلتفرم
+def get_user_agent():
+    # بررسی تنظیمات پلتفرم از فایل
+    use_ios = False
+    userdata_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "core", "AMAZON_FLEX_BOT-main", "userdata", "use_ios")
+    if os.path.exists(userdata_path):
+        with open(userdata_path, "r") as f:
+            use_ios = f.read().strip().lower() == "true"
+    
+    return random.choice(ios_user_agents if use_ios else android_user_agents)
+
 @app.route('/accept/<api_key>/<marketplace_id>')
 def accept_offer(api_key, marketplace_id):
     # بررسی API کلید
@@ -36,6 +56,9 @@ def accept_offer(api_key, marketplace_id):
         return jsonify({"error": "Invalid API key"}), 403
     
     try:
+        # انتخاب User-Agent مناسب
+        user_agent = get_user_agent()
+        
         # درخواست امضا از سرور دوم
         signature_request = requests.get(
             f"{SIGNATURE_SERVER}/signature/{SIGNATURE_API_KEY}/{marketplace_id}",
@@ -46,7 +69,7 @@ def accept_offer(api_key, marketplace_id):
             },
             timeout=5,
             headers={
-                'User-Agent': random.choice(ios_user_agents),
+                'User-Agent': user_agent,
                 'Content-Type': 'application/json'
             }
         )
@@ -75,6 +98,9 @@ def validate_challenge(api_key, marketplace_id):
         return jsonify({"error": "Invalid API key"}), 403
     
     try:
+        # انتخاب User-Agent مناسب
+        user_agent = get_user_agent()
+        
         # درخواست امضا از سرور دوم
         signature_request = requests.get(
             f"{SIGNATURE_SERVER}/signature/{SIGNATURE_API_KEY}/{marketplace_id}",
@@ -85,7 +111,7 @@ def validate_challenge(api_key, marketplace_id):
             },
             timeout=5,
             headers={
-                'User-Agent': random.choice(ios_user_agents),
+                'User-Agent': user_agent,
                 'Content-Type': 'application/json'
             }
         )
@@ -134,7 +160,7 @@ def generate_local_signature(marketplace_id=None):
     return {
         "signature_input": sig_input,
         "signature": sig,
-        "user_agent": random.choice(ios_user_agents)
+        "user_agent": get_user_agent()
     }
 
 if __name__ == '__main__':
